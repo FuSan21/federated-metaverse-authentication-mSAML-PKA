@@ -6,6 +6,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
 from cryptography.exceptions import InvalidSignature
+import json
 
 CHALLENGE = None
 
@@ -23,8 +24,16 @@ def authenticateUser(username: str, deviceidhash: int, signature: str):
     global CHALLENGE
     if CHALLENGE is None:
         raise HTTPException(status_code=400, detail="No challenge started")
+
+    with open("users.json", "rb") as users_file:
+        users = json.loads(users_file.read())
+        if users["user1"]["privatekeyfile"]:
+            public_key_file = users["user1"]["privatekeyfile"]
+        else:
+            raise HTTPException(status_code=400, detail="User not found")
+
     # Load the public key
-    with open("public_key.pem", "rb") as key_file:
+    with open(f"users/{public_key_file}", "rb") as key_file:
         pubkey = serialization.load_pem_public_key(key_file.read())
     # Decode the base64 signature
     signature_bytes = base64.b64decode(signature)

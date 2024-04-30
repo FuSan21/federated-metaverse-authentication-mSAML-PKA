@@ -2,16 +2,16 @@
     "user1": {
         "pass_username": "nSQCuGCMVtdwpoCFlCMYoqUHpBfaHBQImKISvePqVHbqxdJiBt",
         "deviceidhash": "aa",
-        "privatekeyfile": "public_key.pem"
+        "privatekeyfile": "user1.pem"
     },
     "user2": {
         "pass_username": "bSQDuGDMWtdxpoDFlDMYpqUHpCfaHCQJmKJSveRqWHbrxeKiCt",
         "deviceidhash": "bb",
-        "privatekeyfile": "public_key2.pem"
+        "privatekeyfile": "xx.pem"
     },
     "user3": {
         "pass_username": "cSQEuGDNXtdypoEFlEMYrqUHpDfaHDQKnKKTveSqXHbsxfLiDt",
         "deviceidhash": "cc",
-        "privatekeyfile": "public_key3.pem"
+        "privatekeyfile": "ds.pem"
     }
 }
