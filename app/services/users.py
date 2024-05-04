@@ -25,21 +25,29 @@ def create_user(db: Session, user: _schemas.UserCreate):
     db.commit()
     db.refresh(db_challenge)
 
-    return db_user, db_challenge
+    return _schemas.User(
+        id=db_user.id,
+        username=db_user.username,
+        is_active=db_user.is_active,
+        pass_username=db_challenge.pass_username,
+        deviceidhash=db_challenge.deviceidhash,
+    )
 
 
-def create_challenge(db: Session, username: str, challenge: str):
+def create_challenge(db: Session, pass_username: str, challenge: str):
     db_challenge = (
         db.query(_models.Challenge)
-        .filter(_models.Challenge.username == username)
+        .filter(_models.Challenge.pass_username == pass_username)
         .first()
     )
     db_challenge.challenge = challenge
     db.commit()
+    db.refresh(db_challenge)
+
     challenge = _schemas.Challenge(
         pass_username=db_challenge.pass_username,
         deviceidhash=db_challenge.deviceidhash,
-        challenge=db_challenge.challenge,
+        challenge=challenge,
     )
     return challenge
 
