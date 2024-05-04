@@ -22,22 +22,35 @@ def create_user(user: _schemas.UserCreate, db: Session = conn_db):
         raise HTTPException(status_code=400, detail="The username is already used")
     user.pass_username = auth_handler.generate_pass_username(user.username)
     db_user, db_challenge = _users.create_user(db=db, user=user)
-    return _schemas.User(id=db_user.id, username=db_user.username, is_active=db_user.is_active, pass_username=db_challenge.pass_username, deviceidhash=db_challenge.deviceidhash)
+    return _schemas.User(
+        id=db_user.id,
+        username=db_user.username,
+        is_active=db_user.is_active,
+        pass_username=db_challenge.pass_username,
+        deviceidhash=db_challenge.deviceidhash,
+    )
+
 
 @router.get("/access", response_model=_schemas.Challenge)
 def access(
-    username: str,    
+    username: str,
     deviceid: str,
+    pass_username: str,
     server_address: str,
     db: Session = conn_db,
 ):
     db_user = _users.get_user_by_username(db=db, username=username)
     if db_user is None:
         raise HTTPException(status_code=401, detail="The user does not exist")
-    challenge = _users.create_challenge(db=db, username=username ,challenge=auth_handler.generate_cryptographic_challenge())
-    
+    challenge = _users.create_challenge(
+        db=db,
+        pass_username=pass_username,
+        challenge=auth_handler.generate_cryptographic_challenge(),
+    )
+
     # _users.update_deviceidhash(db=db, username=username, deviceidhash=deviceid)
     return challenge
+
 
 @router.post("/auth", response_model=_schemas.LoginToken)
 def login_user(user: _schemas.UserCreate, db: Session = conn_db):

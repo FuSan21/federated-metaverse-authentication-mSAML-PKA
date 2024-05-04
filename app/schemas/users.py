@@ -31,6 +31,7 @@ class LoginToken(BaseModel):
     access_token: str = None
     refresh_token: str = None
 
+
 class Challenge(BaseModel):
     pass_username: str
     deviceidhash: str

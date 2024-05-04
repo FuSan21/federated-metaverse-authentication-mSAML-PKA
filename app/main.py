@@ -22,7 +22,7 @@ app.include_router(_users.router, tags=["User"])
 
 @app.get("/")
 def root():
-   return {"msg":"Federated Metaverse Authentication Server"}
+    return {"msg": "Federated Metaverse Authentication Server"}
 
 
 if __name__ == "__main__":
