@@ -26,12 +26,12 @@ class AuthHandler:
         return challenge + "," + expiration
 
     def verify_cryptographic_challenge(self, challenge, signature, public_key):
-        challenge, expiration = challenge.split(",")
+        expiration = challenge.split(",")[-1]
         if datetime.now(timezone.utc) > datetime.fromisoformat(expiration):
             raise HTTPException(status_code=401, detail="Challenge has expired")
-        public_key = serialization.load_pem_public_key(public_key)
-        signature_bytes = base64.b64decode(signature)
         try:
+            public_key = serialization.load_pem_public_key(public_key.encode())
+            signature_bytes = base64.b64decode(signature)
             public_key.verify(
             signature_bytes,
             challenge.encode("utf-8"),
