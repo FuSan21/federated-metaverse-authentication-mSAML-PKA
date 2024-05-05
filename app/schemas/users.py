@@ -36,3 +36,9 @@ class Challenge(BaseModel):
     pass_username: str
     deviceidhash: str
     challenge: str
+
+class Signature(BaseModel):
+    username: str
+    pass_username: str
+    deviceidhash: str
+    signature: str

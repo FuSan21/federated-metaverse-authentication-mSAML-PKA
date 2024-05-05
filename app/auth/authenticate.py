@@ -6,8 +6,8 @@ from datetime import datetime, timedelta, timezone
 import random
 import string
 import base64
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives import serialization, hashes
 
 
 class AuthHandler:
@@ -23,16 +23,26 @@ class AuthHandler:
     def generate_cryptographic_challenge(self):
         challenge = base64.b64encode(random.randbytes(32)).decode("utf-8")
         expiration = (datetime.now(timezone.utc) + timedelta(minutes=1)).isoformat()
-        return challenge + "." + expiration
+        return challenge + "," + expiration
 
-    def authenticate_cryptographic_challenge(self, challenge, signature, pass_username):
-        challenge, expiration = challenge.split(".")
-        if datetime.now(timezone.utc) > expiration.fromisoformat():
+    def verify_cryptographic_challenge(self, challenge, signature, public_key):
+        challenge, expiration = challenge.split(",")
+        if datetime.now(timezone.utc) > datetime.fromisoformat(expiration):
             raise HTTPException(status_code=401, detail="Challenge has expired")
-        if pass_username != self.generate_pass_username(challenge):
-            raise HTTPException(status_code=401, detail="Invalid challenge")
-
-        return challenge
+        public_key = serialization.load_pem_public_key(public_key)
+        signature_bytes = base64.b64decode(signature)
+        try:
+            public_key.verify(
+            signature_bytes,
+            challenge.encode("utf-8"),
+            padding.PSS(
+                mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH
+            ),
+            hashes.SHA256(),
+        )
+        except Exception:
+            return False
+        return True
 
     def encode_token(self, username, type):
         payload = dict(iss=username, sub=type)

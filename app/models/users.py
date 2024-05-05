@@ -9,7 +9,7 @@ class User(_database.Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(255), unique=True, index=True)
     is_active = Column(Boolean, default=True)
-    challenges = relationship("Challenge", back_populates="user")
+    challenges = relationship("Challenge", back_populates="user", cascade="all, delete-orphan")
 
 
 class Challenge(_database.Base):
@@ -19,7 +19,7 @@ class Challenge(_database.Base):
     deviceidhash = Column(String(255))
     public_key = Column(String(1024))
     challenge = Column(String(255))
-    username = Column(String(255), ForeignKey("users.username"))
+    username = Column(String(255), ForeignKey("users.username", ondelete="CASCADE"))
     user = relationship("User", back_populates="challenges")
 
 

@@ -1,13 +1,43 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
 
 import app.models.users as _models
 import app.schemas.users as _schemas
 
+def has_passkey(db: Session, username: str, pass_username: str):
+    db_user = get_user_by_username(db=db, username=username)
+    for challenge in db_user.challenges:
+        if challenge.pass_username == pass_username:
+            return True
+    return False
+
+def is_valid_device(db: Session, pass_username: str, deviceid: str):
+    db_user = db.query(_models.Challenge).filter(_models.Challenge.pass_username == pass_username).first()
+    if db_user.deviceidhash == deviceid:
+        return True
+    return False
+
+def has_challenge(db: Session, pass_username: str):
+    db_user = db.query(_models.Challenge).filter(_models.Challenge.pass_username == pass_username).first()
+    if db_user.challenge is not None:
+        return True
+    return False
 
 def get_user_by_username(db: Session, username: str):
     return db.query(_models.User).filter(_models.User.username == username).first()
 
+def pass_username_exists(db: Session, username: str, pass_username: str):
+    db_user = db.query(_models.Challenge).filter(_models.Challenge.username == username).filter(_models.Challenge.pass_username == pass_username).first()
+    if db_user is None:
+        return False
+    return True
+
+def get_public_key(db: Session, pass_username: str):
+    db_user = db.query(_models.Challenge).filter(_models.Challenge.pass_username == pass_username).first()
+    return db_user.public_key
+
+def get_challenge(db: Session, pass_username: str):
+    db_challenge = db.query(_models.Challenge).filter(_models.Challenge.pass_username == pass_username).first()
+    return db_challenge.challenge
 
 def create_user(db: Session, user: _schemas.UserCreate):
     db_user = _models.User(username=user.username)

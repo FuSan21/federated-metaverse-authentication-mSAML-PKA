@@ -35,27 +35,35 @@ def access(
     db_user = _users.get_user_by_username(db=db, username=username)
     if db_user is None:
         raise HTTPException(status_code=401, detail="The user does not exist")
-    if db_user.challenges[-1].deviceidhash != deviceid:
-        raise HTTPException(status_code=401, detail="Invalid device")
-    if db_user.challenges[-1].pass_username != pass_username:
+    if not _users.pass_username_exists(db=db, username=username, pass_username=pass_username):
         raise HTTPException(status_code=401, detail="Invalid pass username")
-    
-    challenge = _users.create_challenge(
+    if not _users.is_valid_device(db=db, pass_username=pass_username, deviceid=deviceid):
+        raise HTTPException(status_code=401, detail="Invalid device")
+
+    return _users.create_challenge(
         db=db,
         pass_username=pass_username,
         challenge=auth_handler.generate_cryptographic_challenge(),
     )
-    return challenge
 
 
 @router.post("/auth", response_model=_schemas.LoginToken)
-def login_user(user: _schemas.UserCreate, db: Session = conn_db):
+def login_user(user: _schemas.Signature, db: Session = conn_db):
     db_user = _users.get_user_by_username(db=db, username=user.username)
     if db_user is None:
         raise HTTPException(status_code=401, detail="The user does not exist")
-    is_verified = auth_handler.verify_password(user.password, db_user.hashed_password)
+    if not _users.pass_username_exists(db=db, username=user.username, pass_username=user.pass_username):
+        raise HTTPException(status_code=401, detail="Passkey does not exist")
+    if not _users.has_challenge(db=db, pass_username=user.pass_username):
+        raise HTTPException(status_code=401, detail="Challenge does not exist")
+    
+    is_verified = auth_handler.verify_cryptographic_challenge(
+        challenge=_users.get_challenge(db=db, pass_username=user.pass_username),
+        signature=user.signature,
+        public_key=_users.get_public_key(db=db, pass_username=user.pass_username)
+    )
     if not is_verified:
-        raise HTTPException(status_code=401, detail="Password does not matched")
+        raise HTTPException(status_code=401, detail="Authentication failed")
     return auth_handler.encode_login_token(user.username)
 
 
