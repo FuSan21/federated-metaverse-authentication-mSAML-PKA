@@ -99,10 +99,10 @@ def loginRequest(userName, deviceID, mainServerAddress, guestServerAddress):
     deviceIntriginityCheck()
     print("Requesting Login to Metaworld Server")
     print(
-        "http://localhost:8000/access?username=string&deviceid=string&pass_username=string&server_address=string"
+        f"http://localhost:8000/access?username=string&deviceid=string&pass_username=string&server_address={guestServerAddress}"
     )
     response = requests.get(
-        "http://localhost:8000/access?username=string&deviceid=string&pass_username=string&server_address=string"
+        f"http://localhost:8000/access?username=string&deviceid=string&pass_username=string&server_address={guestServerAddress}"
     )
     if response.status_code == 200:
         biometricAuth(response.json(), mainServerAddress, userName)

@@ -1,6 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+import requests
 
 import app.database.connection as _database
 import app.services.users as _users
@@ -40,9 +41,21 @@ def access(
     if not _users.is_valid_device(db=db, pass_username=pass_username, deviceid=deviceid):
         raise HTTPException(status_code=401, detail="Invalid device")
     
-    auth_type = "jwt"
-    auth_algorithm = "HS256"
-    challege_type = "random_string"
+    if server_address != "localhost:8000":
+        request = f"http://{server_address}/remoteaccess?username={username}"
+        response = requests.get(request)
+        if response.status_code != 200:
+            raise HTTPException(status_code=401, detail="Failed to connect to the remote server")
+        try:
+            auth_type = response.json().get("auth_type")
+            auth_algorithm = response.json().get("auth_algorithm")
+            challege_type = response.json().get("type")
+        except Exception:
+            raise HTTPException(status_code=401, detail="Invalid response from the remote server")
+    else:
+        auth_type = "jwt"
+        auth_algorithm = "HS256"
+        challege_type = "random_string"
     challenge, challenge_details = auth_handler.generate_cryptographic_challenge(auth_type=auth_type, auth_algorithm=auth_algorithm, challege_type=challege_type)
     return _users.create_challenge(
         db=db,
