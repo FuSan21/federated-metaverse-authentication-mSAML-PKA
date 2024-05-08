@@ -39,11 +39,16 @@ def access(
         raise HTTPException(status_code=401, detail="Invalid pass username")
     if not _users.is_valid_device(db=db, pass_username=pass_username, deviceid=deviceid):
         raise HTTPException(status_code=401, detail="Invalid device")
-
+    
+    auth_type = "jwt"
+    auth_algorithm = "HS256"
+    challege_type = "random_string"
+    challenge, challenge_details = auth_handler.generate_cryptographic_challenge(auth_type=auth_type, auth_algorithm=auth_algorithm, challege_type=challege_type)
     return _users.create_challenge(
         db=db,
         pass_username=pass_username,
-        challenge=auth_handler.generate_cryptographic_challenge(),
+        challenge=challenge,
+        challenge_details=challenge_details
     )
 
 
@@ -57,8 +62,10 @@ def login_user(user: _schemas.Signature, db: Session = conn_db):
     if not _users.has_challenge(db=db, pass_username=user.pass_username):
         raise HTTPException(status_code=401, detail="Challenge does not exist")
     
+    challenge, challenge_details = _users.get_challenge(db=db, pass_username=user.pass_username)
     is_verified = auth_handler.verify_cryptographic_challenge(
-        challenge=_users.get_challenge(db=db, pass_username=user.pass_username),
+        challenge=challenge,
+        challenge_details=challenge_details,
         signature=user.signature,
         public_key=_users.get_public_key(db=db, pass_username=user.pass_username)
     )

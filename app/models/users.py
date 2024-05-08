@@ -19,6 +19,7 @@ class Challenge(_database.Base):
     deviceidhash = Column(String(255))
     public_key = Column(String(1024))
     challenge = Column(String(255))
+    challenge_details = Column(String(255))
     username = Column(String(255), ForeignKey("users.username", ondelete="CASCADE"))
     user = relationship("User", back_populates="challenges")
 

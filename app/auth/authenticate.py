@@ -20,13 +20,20 @@ class AuthHandler:
         letters = string.ascii_lowercase
         return username + "." + ("".join(random.choice(letters) for i in range(10)))
 
-    def generate_cryptographic_challenge(self):
+    def generate_cryptographic_challenge(self, auth_type, auth_algorithm, challege_type):
+        if challege_type != "random_string":
+            raise HTTPException(status_code=400, detail="Unsupported challenge type")
+        if auth_type != "jwt":
+            raise HTTPException(status_code=400, detail="Unsupported auth type")
+        if auth_algorithm != "HS256":
+            raise HTTPException(status_code=400, detail="Unsupported auth algorithm")
+        
         challenge = base64.b64encode(random.randbytes(32)).decode("utf-8")
         expiration = (datetime.now(timezone.utc) + timedelta(minutes=1)).isoformat()
-        return challenge + "," + expiration
+        return challenge,expiration+",jwt,HS256"
 
-    def verify_cryptographic_challenge(self, challenge, signature, public_key):
-        expiration = challenge.split(",")[-1]
+    def verify_cryptographic_challenge(self, challenge, challenge_details, signature, public_key):
+        expiration = challenge_details.split(",")[0]
         if datetime.now(timezone.utc) > datetime.fromisoformat(expiration):
             raise HTTPException(status_code=401, detail="Challenge has expired")
         try:

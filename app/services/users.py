@@ -37,7 +37,7 @@ def get_public_key(db: Session, pass_username: str):
 
 def get_challenge(db: Session, pass_username: str):
     db_challenge = db.query(_models.Challenge).filter(_models.Challenge.pass_username == pass_username).first()
-    return db_challenge.challenge
+    return db_challenge.challenge, db_challenge.challenge_details
 
 def create_user(db: Session, user: _schemas.UserCreate):
     db_user = _models.User(username=user.username)
@@ -64,13 +64,14 @@ def create_user(db: Session, user: _schemas.UserCreate):
     )
 
 
-def create_challenge(db: Session, pass_username: str, challenge: str):
+def create_challenge(db: Session, pass_username: str, challenge: str, challenge_details: str):
     db_challenge = (
         db.query(_models.Challenge)
         .filter(_models.Challenge.pass_username == pass_username)
         .first()
     )
     db_challenge.challenge = challenge
+    db_challenge.challenge_details = challenge_details
     db.commit()
     db.refresh(db_challenge)
 
