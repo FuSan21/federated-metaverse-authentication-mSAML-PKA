@@ -1,6 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+import requests
 
 import app.database.connection as _database
 import app.services.users as _users
@@ -39,11 +40,27 @@ def access(
         raise HTTPException(status_code=401, detail="Invalid pass username")
     if not _users.is_valid_device(db=db, pass_username=pass_username, deviceid=deviceid):
         raise HTTPException(status_code=401, detail="Invalid device")
-
+    if server_address != "localhost:8000":
+        request = f"http://{server_address}/remoteaccess?username={username}"
+        response = requests.get(request)
+        if response.status_code != 200:
+            raise HTTPException(status_code=401, detail="Failed to connect to the remote server")
+        try:
+            auth_type = response.json().get("auth_type")
+            auth_algorithm = response.json().get("auth_algorithm")
+            challege_type = response.json().get("type")
+        except Exception:
+            raise HTTPException(status_code=401, detail="Invalid response from the remote server")
+    else:
+        auth_type = "jwt"
+        auth_algorithm = "HS256"
+        challege_type = "random_string"
+    challenge, challenge_details = auth_handler.generate_cryptographic_challenge(auth_type=auth_type, auth_algorithm=auth_algorithm, challege_type=challege_type)
     return _users.create_challenge(
         db=db,
         pass_username=pass_username,
-        challenge=auth_handler.generate_cryptographic_challenge(),
+        challenge=challenge,
+        challenge_details=challenge_details
     )
 
 
@@ -56,9 +73,10 @@ def login_user(user: _schemas.Signature, db: Session = conn_db):
         raise HTTPException(status_code=401, detail="Passkey does not exist")
     if not _users.has_challenge(db=db, pass_username=user.pass_username):
         raise HTTPException(status_code=401, detail="Challenge does not exist")
-    
+    challenge, challenge_details = _users.get_challenge(db=db, pass_username=user.pass_username)
     is_verified = auth_handler.verify_cryptographic_challenge(
-        challenge=_users.get_challenge(db=db, pass_username=user.pass_username),
+        challenge=challenge,
+        challenge_details=challenge_details,
         signature=user.signature,
         public_key=_users.get_public_key(db=db, pass_username=user.pass_username)
     )
@@ -67,7 +85,7 @@ def login_user(user: _schemas.Signature, db: Session = conn_db):
     return auth_handler.encode_login_token(user.username)
 
 
-@router.get("/users", response_model=List[_schemas.User])
+@router.get("/users", response_model=List[_schemas.Userslist])
 def read_user(
     skip: int = 0,
     limit: int = 10,

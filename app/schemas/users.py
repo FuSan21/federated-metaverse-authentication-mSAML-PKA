@@ -22,6 +22,12 @@ class User(_UserBase):
     class Config:
         from_attributes = True
 
+class Userslist(_UserBase):
+    id: int
+    is_active: bool
+
+    class Config:
+        from_attributes = True
 
 class UpdateToken(BaseModel):
     access_token: str = None
