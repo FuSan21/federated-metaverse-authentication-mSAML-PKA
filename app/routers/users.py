@@ -67,7 +67,7 @@ def login_user(user: _schemas.Signature, db: Session = conn_db):
     return auth_handler.encode_login_token(user.username)
 
 
-@router.get("/users", response_model=List[_schemas.User])
+@router.get("/users", response_model=List[_schemas.Userslist])
 def read_user(
     skip: int = 0,
     limit: int = 10,
