@@ -105,3 +105,7 @@ def update_token(username=Depends(auth_handler.auth_refresh_wrapper)):
     if username is None:
         raise HTTPException(status_code=401, detail="not authorization")
     return auth_handler.encode_login_token(username)
+
+@router.get("/jwt_public_key")
+def jwt_public_key():
+    return {"public_key": auth_handler.get_jwt_public_key()}

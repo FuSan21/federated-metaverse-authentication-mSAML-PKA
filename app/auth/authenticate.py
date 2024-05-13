@@ -19,6 +19,9 @@ class AuthHandler:
     with open("./app/auth/public_key.pem", "rb") as key_file:
         jwt_public_key = load_pem_public_key(key_file.read(), backend=default_backend())
 
+    def get_jwt_public_key(self):
+        return self.jwt_public_key
+
     def generate_pass_username(self, username):
         letters = string.ascii_lowercase
         return username + "." + ("".join(random.choice(letters) for i in range(10)))
