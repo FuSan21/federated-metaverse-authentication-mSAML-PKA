@@ -8,13 +8,16 @@ import string
 import base64
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization, hashes
-
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.serialization import load_pem_public_key
 
 class AuthHandler:
     security = HTTPBearer()
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-    secret = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCIE6a1NyEFe7qCDFrvWFZiAlY1ttE5596w5dLjNSaHlKGv8AXbKg/f8yKY9fKAJ5BKoeWEkPPjpn1t9QQAZYzqH9KNOFigMU8pSaRUxjI2dDvwmu8ZH6EExY+RfrPjQGmeliK18iFzFgBtf0eH3NAW3Pf71OZZz+cuNnVtE9lrYQIDAQAB"
+    with open("./app/auth/private_key.pem", "rb") as key_file:
+        jwt_private_key = serialization.load_pem_private_key(key_file.read(), password=None, backend=default_backend())
+    with open("./app/auth/public_key.pem", "rb") as key_file:
+        jwt_public_key = load_pem_public_key(key_file.read(), backend=default_backend())
 
     def generate_pass_username(self, username):
         letters = string.ascii_lowercase
@@ -25,12 +28,12 @@ class AuthHandler:
             raise HTTPException(status_code=400, detail="Unsupported challenge type")
         if auth_type != "jwt":
             raise HTTPException(status_code=400, detail="Unsupported auth type")
-        if auth_algorithm != "HS256":
+        if auth_algorithm != "RS256":
             raise HTTPException(status_code=400, detail="Unsupported auth algorithm")
         
         challenge = base64.b64encode(random.randbytes(32)).decode("utf-8")
         expiration = (datetime.now(timezone.utc) + timedelta(minutes=1)).isoformat()
-        return challenge,expiration+",jwt,HS256"
+        return challenge,expiration+",jwt,RS256"
 
     def verify_cryptographic_challenge(self, challenge, challenge_details, signature, public_key):
         expiration = challenge_details.split(",")[0]
@@ -59,7 +62,7 @@ class AuthHandler:
         else:
             to_encode.update({"exp": datetime.now(timezone.utc) + timedelta(hours=720)})
 
-        return jwt.encode(to_encode, self.secret, algorithm="HS256")
+        return jwt.encode(to_encode, self.jwt_private_key, algorithm="RS256")
 
     def encode_login_token(self, username):
         access_token = self.encode_token(username, "access_token")
@@ -78,7 +81,7 @@ class AuthHandler:
 
     def decode_access_token(self, token):
         try:
-            payload = jwt.decode(token, self.secret, algorithms=["HS256"])
+            payload = jwt.decode(token, self.jwt_public_key, algorithms=["RS256"])
             if payload["sub"] != "access_token":
                 raise HTTPException(status_code=401, detail="Invalid token")
             return payload["iss"]
@@ -89,7 +92,7 @@ class AuthHandler:
 
     def decode_refresh_token(self, token):
         try:
-            payload = jwt.decode(token, self.secret, algorithms=["HS256"])
+            payload = jwt.decode(token, self.jwt_public_key, algorithms=["RS256"])
             if payload["sub"] != "refresh_token":
                 raise HTTPException(status_code=401, detail="Invalid token")
             return payload["iss"]

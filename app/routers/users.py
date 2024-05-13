@@ -54,7 +54,7 @@ def access(
             raise HTTPException(status_code=401, detail="Invalid response from the remote server")
     else:
         auth_type = "jwt"
-        auth_algorithm = "HS256"
+        auth_algorithm = "RS256"
         challege_type = "random_string"
     challenge, challenge_details = auth_handler.generate_cryptographic_challenge(auth_type=auth_type, auth_algorithm=auth_algorithm, challege_type=challege_type)
     return _users.create_challenge(

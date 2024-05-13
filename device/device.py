@@ -27,7 +27,7 @@ def getBiometricsConfirmation():
 
 def sign_challenge(challenge):
     # Load the private key
-    with open("private_key.pem", "rb") as key_file:
+    with open("./device/private_key.pem", "rb") as key_file:
         private_key = serialization.load_pem_private_key(key_file.read(), password=None)
 
     # Sign the challenge
