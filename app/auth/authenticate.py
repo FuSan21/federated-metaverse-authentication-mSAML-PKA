@@ -20,14 +20,17 @@ class AuthHandler:
         jwt_public_key = load_pem_public_key(key_file.read(), backend=default_backend())
 
     def get_jwt_public_key(self):
-        return self.jwt_public_key
+        return self.jwt_public_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+        ).decode()
 
     def generate_pass_username(self, username):
         letters = string.ascii_lowercase
         return username + "." + ("".join(random.choice(letters) for i in range(10)))
 
-    def generate_cryptographic_challenge(self, auth_type, auth_algorithm, challege_type):
-        if challege_type != "random_string":
+    def generate_cryptographic_challenge(self, auth_type, auth_algorithm, challenge_type):
+        if challenge_type != "random_string":
             raise HTTPException(status_code=400, detail="Unsupported challenge type")
         if auth_type != "jwt":
             raise HTTPException(status_code=400, detail="Unsupported auth type")

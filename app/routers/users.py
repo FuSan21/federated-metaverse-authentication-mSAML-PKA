@@ -25,7 +25,7 @@ def create_user(user: _schemas.UserCreate, db: Session = conn_db):
     return _users.create_user(db=db, user=user)
 
 
-@router.get("/access", response_model=_schemas.Challenge)
+@router.get("/access", status_code=201, response_model=_schemas.Challenge)
 def access(
     username: str,
     deviceid: str,
@@ -41,22 +41,22 @@ def access(
     if not _users.is_valid_device(db=db, pass_username=pass_username, deviceid=deviceid):
         raise HTTPException(status_code=401, detail="Invalid device")
     
-    if server_address != "localhost:8000":
+    if server_address != "127.0.0.1:8000":
         request = f"http://{server_address}/remoteaccess?username={username}"
         response = requests.get(request)
-        if response.status_code != 200:
+        if response.status_code != 201:
             raise HTTPException(status_code=401, detail="Failed to connect to the remote server")
         try:
             auth_type = response.json().get("auth_type")
             auth_algorithm = response.json().get("auth_algorithm")
-            challege_type = response.json().get("type")
+            challenge_type = response.json().get("challenge_type")
         except Exception:
             raise HTTPException(status_code=401, detail="Invalid response from the remote server")
     else:
         auth_type = "jwt"
         auth_algorithm = "RS256"
-        challege_type = "random_string"
-    challenge, challenge_details = auth_handler.generate_cryptographic_challenge(auth_type=auth_type, auth_algorithm=auth_algorithm, challege_type=challege_type)
+        challenge_type = "random_string"
+    challenge, challenge_details = auth_handler.generate_cryptographic_challenge(auth_type=auth_type, auth_algorithm=auth_algorithm, challenge_type=challenge_type)
     return _users.create_challenge(
         db=db,
         pass_username=pass_username,
