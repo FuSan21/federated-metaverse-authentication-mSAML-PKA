@@ -24,6 +24,14 @@ def already_in_session(db: Session, username: str):
         return False
     return True
 
+def is_accepted(db: Session, username: str):
+    db_user = db.query(_models.Visitors).filter(_models.Visitors.username == username).first()
+    if db_user is None:
+        return False
+    elif db_user.status == "accepted":
+        return True
+    return False
+
 
 def start_session(db: Session, username: str, status: str):
     db_visitor = db.query(_models.Visitors).filter(_models.Visitors.username == username).first()
@@ -44,3 +52,7 @@ def update_public_key(db: Session, username: str, public_key: str):
     db.commit()
     db.refresh(db_visitor)
     return 1
+
+def get_public_key(db: Session, username: str):
+    db_visitor = db.query(_models.Visitors).filter(_models.Visitors.username == username).first()
+    return db_visitor.public_key

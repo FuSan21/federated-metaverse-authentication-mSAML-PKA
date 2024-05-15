@@ -61,6 +61,9 @@ def generateResponse(response, mainServerAddress, userName):
     if postresponse.status_code == 200:
         print("Response Sent Successfully")
         print("Response: ", postresponse.json())
+        for key, value in postresponse.json().items():
+            with open(f"./device/{key}.txt", "w") as f:
+                f.write(value)
     else:
         print("Failed to send response")
         printHttpStatus(postresponse.status_code)
