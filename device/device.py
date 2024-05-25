@@ -117,5 +117,5 @@ def loginRequest(userName, deviceID, mainServerAddress, guestServerAddress):
 
 if __name__ == "__main__":
     userName = "string@127.0.0.1:8000"
-    guestServerAddress = "127.0.0.1:8000"
+    guestServerAddress = "127.0.0.1:9000"
     loginRequest(userName, DEVICE_ID, MAINSERVERADDRESS, guestServerAddress)
