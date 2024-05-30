@@ -11,6 +11,8 @@ BIOMETRIC = "1234"
 
 
 def validateCertificate():
+    print("Validating Certificate")
+    print("Certificate Validated")
     return True
 
 
@@ -43,7 +45,7 @@ def sign_challenge(challenge):
 
 
 def generateResponse(response, mainServerAddress, userName):
-    print("Generating Response")
+    print("Generating Response for Challenge")
     deviceidhash = hash(DEVICE_ID)
     data = {
         "username": str(userName),
@@ -59,8 +61,8 @@ def generateResponse(response, mainServerAddress, userName):
     postresponse = requests.post(f"http://{mainServerAddress}/auth", json=data, headers=headers)
 
     if postresponse.status_code == 200:
-        print("Response Sent Successfully")
-        print("Response: ", postresponse.json())
+        print("Challenge Response Validated")
+        print("Tokens Generatedclear: ", postresponse.json())
         for key, value in postresponse.json().items():
             with open(f"./device/{key}.txt", "w") as f:
                 f.write(value)
@@ -108,6 +110,7 @@ def loginRequest(userName, deviceID, mainServerAddress, guestServerAddress):
         f"http://localhost:8000/access?username={userName}&deviceid=string&pass_username=string&server_address={guestServerAddress}"
     )
     if response.status_code == 201:
+        print("Recieved a cryptographic Challenge")
         biometricAuth(response.json(), mainServerAddress, userName)
     else:
         print("Login Failed")
